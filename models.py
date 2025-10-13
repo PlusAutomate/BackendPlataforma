@@ -25,7 +25,7 @@ class Vaga(db.Model):
     status = db.Column(db.String(100), default='aberta')
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     usuario_id_usuario = db.Column(db.Integer, db.ForeignKey('usuario.id_usuario'), nullable=False)
-    processos_seletivos = db.relationship('ProcessoSeletivo', backref='vaga', lazy=True)
+    ativo = db.Column(db.Boolean, default=True, nullable=False)
 
     def __repr__(self):
         return f"<Vaga {self.titulo}>"
@@ -49,8 +49,8 @@ class Candidato(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     telefone = db.Column(db.String(20))
-    curriculo_id_curriculo = db.Column(db.Integer, db.ForeignKey('curriculo.id_curriculo'), nullable=False)
-    processos = db.relationship('ProcessoSeletivo', backref='candidato', lazy=True)
+    curriculo_id_curriculo = db.Column(db.Integer, db.ForeignKey('curriculo.id_curriculo'))
+    ativo = db.Column(db.Boolean, default=True, nullable=False)
 
     def __repr__(self):
         return f"<Candidato {self.nome}>"
@@ -59,9 +59,8 @@ class Candidato(db.Model):
 class ProcessoSeletivo(db.Model):
     __tablename__ = 'processo_seletivo'
 
-    id = db.Column(db.Integer, primary_key=True)
-    vaga_id_vaga = db.Column(db.Integer, db.ForeignKey('vaga.id_vaga'), nullable=False)
-    candidato_id_candidato = db.Column(db.Integer, db.ForeignKey('candidato.id_candidato'), nullable=False)
+    vaga_id_vaga = db.Column(db.Integer, db.ForeignKey('vaga.id_vaga'), primary_key=True)
+    candidato_id_candidato = db.Column(db.Integer, db.ForeignKey('candidato.id_candidato'), primary_key=True)
 
     def __repr__(self):
         return f"<ProcessoSeletivo Vaga={self.vaga_id_vaga} Candidato={self.candidato_id_candidato}>"

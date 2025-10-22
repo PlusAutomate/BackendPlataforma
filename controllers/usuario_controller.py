@@ -42,7 +42,6 @@ def login_rh():
         return jsonify({"erro": "Usuário não autorizado para acessar o sistema RH"}), 403
 
     return jsonify({
-        "mensagem": "Login RH bem-sucedido!",
         "usuario": {
             "id_usuario": usuario.id_usuario,
             "nome": usuario.nome,
@@ -75,7 +74,6 @@ def login_gestor():
         return jsonify({"erro": "Usuário não autorizado para acessar o sistema Gestor"}), 403
 
     return jsonify({
-        "mensagem": "Login Gestor bem-sucedido!",
         "usuario": {
             "id_usuario": usuario.id_usuario,
             "nome": usuario.nome,

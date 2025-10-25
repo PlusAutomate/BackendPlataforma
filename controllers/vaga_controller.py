@@ -3,6 +3,7 @@ from models import Vaga, db
 
 vaga_bp = Blueprint("vaga", __name__, url_prefix="/vagas")
 
+
 @vaga_bp.route("", methods=["GET"])
 def listar_vagas():
     vagas = Vaga.query.filter_by(ativo=True).all()  # ← apenas vagas ativas
@@ -14,6 +15,7 @@ def listar_vagas():
         "data_criacao": v.data_criacao,
         "ativo": v.ativo
     } for v in vagas])
+
 
 @vaga_bp.route("/<int:id>", methods=["GET"])
 def detalhar_vaga(id):
@@ -29,6 +31,7 @@ def detalhar_vaga(id):
         "ativo": vaga.ativo
     })
 
+
 @vaga_bp.route("", methods=["POST"])
 def criar_vaga():
     dados = request.json
@@ -42,6 +45,7 @@ def criar_vaga():
     db.session.commit()
     return jsonify({"mensagem": "Vaga criada com sucesso!"}), 201
 
+
 @vaga_bp.route("/<int:id>", methods=["PUT"])
 def editar_vaga(id):
     vaga = Vaga.query.get_or_404(id)
@@ -52,8 +56,10 @@ def editar_vaga(id):
     vaga.titulo = dados.get("titulo", vaga.titulo)
     vaga.descricao = dados.get("descricao", vaga.descricao)
     vaga.status = dados.get("status", vaga.status)
+
     db.session.commit()
     return jsonify({"mensagem": "Vaga atualizada com sucesso!"})
+
 
 @vaga_bp.route("/<int:id>", methods=["DELETE"])
 def excluir_vaga(id):
@@ -65,12 +71,13 @@ def excluir_vaga(id):
     db.session.commit()
     return jsonify({"mensagem": "Vaga marcada como inativa com sucesso!"})
 
+
 @vaga_bp.route("/<int:id>/aprovar", methods=["PUT"])
 def aprovar_vaga(id):
     vaga = Vaga.query.get_or_404(id)
     if not vaga.ativo:
         return jsonify({"erro": "Não é possível aprovar uma vaga inativa."}), 400
 
-    vaga.status = "aprovada"
+    vaga.status = "Aberta"
     db.session.commit()
     return jsonify({"mensagem": "Vaga aprovada!"})

@@ -1,75 +1,99 @@
 from flask import Blueprint, jsonify, request
-from models import ProcessoSeletivo, db, Vaga, Candidato
+from models import ProcessoSeletivo, db, Vaga, Candidato, Curriculo
 
 processo_bp = Blueprint("processo", __name__, url_prefix="/processo-seletivo")
 
 
+# =========================
+# Criar novo processo seletivo
+# =========================
 @processo_bp.route("", methods=["POST"])
 def criar_processo_seletivo():
     dados = request.json
-    vaga_id = dados.get("vaga_id_vaga")
-    candidato_id = dados.get("candidato_id_candidato")
+    id_vaga = dados.get("id_vaga")
+    id_candidato = dados.get("id_candidato")
 
-    vaga = Vaga.query.get(vaga_id)
-    candidato = Candidato.query.get(candidato_id)
+    vaga = Vaga.query.get(id_vaga)
+    candidato = Candidato.query.get(id_candidato)
     if not vaga or not candidato:
         return jsonify({"erro": "Vaga ou candidato não encontrados"}), 404
 
     processo = ProcessoSeletivo(
-        vaga_id_vaga=vaga_id,
-        candidato_id_candidato=candidato_id
+        id_vaga=id_vaga,
+        id_candidato=id_candidato
     )
 
     db.session.add(processo)
     db.session.commit()
 
     return jsonify({
-    "mensagem": "Processo seletivo criado com sucesso!",
-    "vaga_id_vaga": processo.vaga_id_vaga,
-    "candidato_id_candidato": processo.candidato_id_candidato
-}), 201
+        "mensagem": "Processo seletivo criado com sucesso!",
+        "id_vaga": processo.id_vaga,
+        "id_candidato": processo.id_candidato
+    }), 201
 
-@processo_bp.route("/vaga/<int:vaga_id>", methods=["GET"])
-def listar_candidatos_por_vaga(vaga_id):
-    processos = ProcessoSeletivo.query.filter_by(vaga_id_vaga=vaga_id).all()
+
+# =========================
+# Listar candidatos por vaga (com currículo)
+# =========================
+@processo_bp.route("/vaga/<int:id_vaga>", methods=["GET"])
+def listar_candidatos_por_vaga(id_vaga):
+    processos = ProcessoSeletivo.query.filter_by(id_vaga=id_vaga).all()
     if not processos:
         return jsonify([]), 200
 
+    vaga = Vaga.query.get(id_vaga)
     resultado = []
+
     for p in processos:
-        candidato = Candidato.query.get(p.candidato_id_candidato)
+        candidato = Candidato.query.get(p.id_candidato)
         if candidato:
+            # busca o currículo relacionado, se houver
+            curriculo = Curriculo.query.get(candidato.id_curriculo)
             resultado.append({
                 "id_candidato": candidato.id_candidato,
                 "nome": candidato.nome,
                 "email": candidato.email,
                 "telefone": candidato.telefone,
-                "status": "Novo",  # aqui você pode puxar de outra tabela se existir
-                "vaga_id_vaga": vaga_id
+                "status": p.status,
+                "vaga": vaga.titulo if vaga else None,
+                "id_vaga": id_vaga,
+                "curriculo": curriculo.caminho if curriculo else None
             })
 
     return jsonify(resultado), 200
 
+
+# =========================
+# Listar todos os processos
+# =========================
 @processo_bp.route("", methods=["GET"])
 def listar_processos():
     processos = ProcessoSeletivo.query.all()
     return jsonify([{
-        "vaga_id_vaga": p.vaga_id_vaga,
-        "candidato_id_candidato": p.candidato_id_candidato
+        "id_vaga": p.id_vaga,
+        "id_candidato": p.id_candidato,
+        "status": p.status,
+        "data_criacao": p.data_criacao,
+        "data_atualizacao": p.data_atualizacao
     } for p in processos])
 
+
+# =========================
+# Excluir processo seletivo
+# =========================
 @processo_bp.route("", methods=["DELETE"])
 def excluir_processo_seletivo():
     dados = request.json
-    vaga_id = dados.get("vaga_id_vaga")
-    candidato_id = dados.get("candidato_id_candidato")
+    id_vaga = dados.get("id_vaga")
+    id_candidato = dados.get("id_candidato")
 
-    if not vaga_id or not candidato_id:
-        return jsonify({"erro": "Informe vaga_id_vaga e candidato_id_candidato"}), 400
+    if not id_vaga or not id_candidato:
+        return jsonify({"erro": "Informe id_vaga e id_candidato"}), 400
 
     processo = ProcessoSeletivo.query.filter_by(
-        vaga_id_vaga=vaga_id,
-        candidato_id_candidato=candidato_id
+        id_vaga=id_vaga,
+        id_candidato=id_candidato
     ).first()
 
     if not processo:

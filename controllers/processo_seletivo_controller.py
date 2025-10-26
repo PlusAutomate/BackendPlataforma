@@ -70,13 +70,24 @@ def listar_candidatos_por_vaga(id_vaga):
 @processo_bp.route("", methods=["GET"])
 def listar_processos():
     processos = ProcessoSeletivo.query.all()
-    return jsonify([{
-        "id_vaga": p.id_vaga,
-        "id_candidato": p.id_candidato,
-        "status": p.status,
-        "data_criacao": p.data_criacao,
-        "data_atualizacao": p.data_atualizacao
-    } for p in processos])
+
+    resultado = []
+    for p in processos:
+        vaga = p.vaga  # relacionamento
+        candidato = p.candidato  # relacionamento
+
+        resultado.append({
+            "id_vaga": p.id_vaga,
+            "titulo_vaga": vaga.titulo if vaga else None,
+            "id_candidato": p.id_candidato,
+            "nome": candidato.nome if candidato else None,
+            "email": candidato.email if candidato else None,
+            "status": p.status,
+            "data_criacao": p.data_criacao.strftime("%Y-%m-%d %H:%M:%S"),
+            "data_atualizacao": p.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S")
+        })
+
+    return jsonify(resultado)
 
 
 # =========================

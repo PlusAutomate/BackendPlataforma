@@ -7,7 +7,7 @@ import boto3
 import fitz  # PyMuPDF
 from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
-from models import Curriculo, db
+from models import Curriculo, Candidato, ProcessoSeletivo, Vaga, db
 
 curriculo_bp = Blueprint("curriculo", __name__, url_prefix="/curriculos")
 
@@ -25,7 +25,8 @@ SECOES = {
 
 def buscar_secao(texto, palavras_chave, proximas_secoes):
     """Encontra uma seção do currículo com base em palavras-chave e delimitadores"""
-    padrao = r'(' + "|".join(map(re.escape, palavras_chave)) + r').*?(' + "|".join(map(re.escape, proximas_secoes)) + r'|$)'
+    padrao = r'(' + "|".join(map(re.escape, palavras_chave)) + \
+        r').*?(' + "|".join(map(re.escape, proximas_secoes)) + r'|$)'
     return re.search(padrao, texto, re.S | re.I)
 
 
@@ -39,7 +40,7 @@ def extrair_nome(linhas):
         if (re.search(r'http|www|linkedin|github|@', linha, re.I) or
             re.fullmatch(r'[\d\-\(\)\s]+', linha) or
             re.search(r'\b\d{4}\b', linha) or
-            re.search(r'\bSP|RJ|MG|RS|SC|PR|BA|PE|CE\b', linha)):
+                re.search(r'\bSP|RJ|MG|RS|SC|PR|BA|PE|CE\b', linha)):
             continue
         palavras = linha.split()
         # 2 a 4 palavras com iniciais maiúsculas
@@ -51,7 +52,7 @@ def extrair_nome(linhas):
         if (linha and not re.search(r'http|www|linkedin|github|@', linha, re.I) and
             not re.fullmatch(r'[\d\-\(\)\s]+', linha) and
             not re.search(r'\b\d{4}\b', linha) and
-            not re.search(r'\bSP|RJ|MG|RS|SC|PR|BA|PE|CE\b', linha)):
+                not re.search(r'\bSP|RJ|MG|RS|SC|PR|BA|PE|CE\b', linha)):
             return linha
     return None
 
@@ -157,7 +158,8 @@ def upload_curriculo():
     s3 = boto3.client('s3')
     key = f"curriculos/{uuid.uuid4().hex}_{filename}"
     try:
-        s3.upload_fileobj(io.BytesIO(file_bytes), S3_BUCKET, key, ExtraArgs={'ContentType': file.content_type or 'application/pdf'})
+        s3.upload_fileobj(io.BytesIO(file_bytes), S3_BUCKET, key, ExtraArgs={
+                          'ContentType': file.content_type or 'application/pdf'})
     except Exception as e:
         return jsonify({"erro": "Falha ao enviar para S3: %s" % str(e)}), 500
 
@@ -179,10 +181,21 @@ def upload_curriculo():
 @curriculo_bp.route("", methods=["GET"])
 def listar_curriculos():
     curriculos = Curriculo.query.all()
-    return jsonify([{
-        "id_curriculo": c.id_curriculo,
-        "caminho": c.caminho
-    } for c in curriculos])
+    resultado = []
+    for c in curriculos:
+        for candidato in c.candidatos:
+            for processo in candidato.processos:  # itera sobre cada vaga que o candidato está
+                resultado.append({
+                    "id_curriculo": c.id_curriculo,
+                    "nome": candidato.nome,
+                    "email": candidato.email,
+                    "status": processo.status,
+                    "id_vaga": processo.vaga.id_vaga,
+                    "id_candidato": candidato.id_candidato,
+                    "vaga": processo.vaga.titulo if processo.vaga else None,
+                    "caminho": c.caminho
+                })
+    return jsonify(resultado)
 
 
 @curriculo_bp.route("/<int:id>", methods=["DELETE"])

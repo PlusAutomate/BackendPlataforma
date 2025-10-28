@@ -79,6 +79,8 @@ def listar_candidatos_por_gestor(id_usuario):
 # =========================
 # Listar candidatos por vaga (com currículo)
 # =========================
+
+
 @processo_bp.route("/vaga/<int:id_vaga>", methods=["GET"])
 def listar_candidatos_por_vaga(id_vaga):
     processos = ProcessoSeletivo.query.filter_by(id_vaga=id_vaga).all()
@@ -105,7 +107,6 @@ def listar_candidatos_por_vaga(id_vaga):
     return jsonify(resultado), 200
 
 
-
 # =========================
 # Listar todos os processos
 # =========================
@@ -122,18 +123,48 @@ def listar_processos():
             "id_vaga": p.id_vaga,
             "titulo_vaga": vaga.titulo if vaga else None,
             "id_candidato": p.id_candidato,
+            "candidato_telefone": candidato.telefone,
             "nome": candidato.nome if candidato else None,
             "email": candidato.email if candidato else None,
             "status": p.status,
             "data_criacao": p.data_criacao.strftime("%Y-%m-%d %H:%M:%S"),
             "data_atualizacao": p.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S"),
             "cvDetalhe": {
-                "skills": vaga.skills.split(',') if vaga and vaga.skills else []
+                "skill": candidato.skill.split(',') if candidato and candidato.skill else []
             }
         })
 
     return jsonify(resultado)
 
+
+@processo_bp.route("/candidato/<int:id_candidato>", methods=["GET"])
+def listar_processos_candidato(id_candidato):
+    # Busca apenas os processos do candidato específico
+    processos = ProcessoSeletivo.query.filter_by(
+        id_candidato=id_candidato).all()
+
+    resultado = []
+    for p in processos:
+        vaga = p.vaga  # relacionamento com a vaga
+        candidato = p.candidato  # relacionamento com o candidato
+
+        resultado.append({
+            "id_vaga": p.id_vaga,
+            "titulo_vaga": vaga.titulo if vaga else None,
+            "id_candidato": p.id_candidato,
+            "candidato_telefone": candidato.telefone if candidato else None,
+            "nome": candidato.nome if candidato else None,
+            "email": candidato.email if candidato else None,
+            "status": p.status,
+            "data_criacao": p.data_criacao.strftime("%Y-%m-%d %H:%M:%S") if p.data_criacao else None,
+            "data_atualizacao": p.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S") if p.data_atualizacao else None,
+            "cvDetalhe": {
+                "skills": candidato.skill.split(',') if candidato and candidato.skill else []
+            },
+            "vagaSkills": vaga.skills.split(',') if vaga and vaga.skills else []
+        })
+
+    return jsonify(resultado), 200
 
 
 # =========================
@@ -163,6 +194,8 @@ def excluir_processo_seletivo():
 # =========================
 # Atualizar status do processo seletivo
 # =========================
+
+
 @processo_bp.route("/<int:id_vaga>/<int:id_candidato>", methods=["PUT"])
 def atualizar_status_processo(id_vaga, id_candidato):
     try:

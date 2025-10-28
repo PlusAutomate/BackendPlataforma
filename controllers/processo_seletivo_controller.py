@@ -159,3 +159,37 @@ def excluir_processo_seletivo():
     db.session.delete(processo)
     db.session.commit()
     return jsonify({"mensagem": "Processo seletivo excluído com sucesso!"})
+
+# =========================
+# Atualizar status do processo seletivo
+# =========================
+@processo_bp.route("/<int:id_vaga>/<int:id_candidato>", methods=["PUT"])
+def atualizar_status_processo(id_vaga, id_candidato):
+    try:
+        dados = request.json
+        novo_status = dados.get("status")
+
+        if not novo_status:
+            return jsonify({"erro": "O campo 'status' é obrigatório."}), 400
+
+        processo = ProcessoSeletivo.query.filter_by(
+            id_vaga=id_vaga,
+            id_candidato=id_candidato
+        ).first()
+
+        if not processo:
+            return jsonify({"erro": "Processo seletivo não encontrado."}), 404
+
+        processo.status = novo_status
+        db.session.commit()
+
+        return jsonify({
+            "mensagem": "Status atualizado com sucesso!",
+            "id_vaga": id_vaga,
+            "id_candidato": id_candidato,
+            "novo_status": novo_status
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"erro": str(e)}), 500

@@ -16,7 +16,7 @@ def create_app():
     CORS(app, origins=[
         "http://127.0.0.1:5500",
         "http://localhost:5500,"
-        "http://18.234.110.104:5500"
+        "http://18.234.110.104:58006"
     ])
 
     return app

@@ -23,7 +23,8 @@ def detalhar_candidato(id):
         "nome": c.nome,
         "email": c.email,
         "telefone": c.telefone,
-        "origem": c.origem,
+        "skill": c.skill,
+        "origem": c.origem
     })
 
 @candidato_bp.route("", methods=["POST"])

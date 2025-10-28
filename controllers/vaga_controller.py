@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from models import Vaga, db
+from models import Vaga, db, Usuario
 
 vaga_bp = Blueprint("vaga", __name__, url_prefix="/vagas")
 
@@ -9,19 +9,36 @@ vaga_bp = Blueprint("vaga", __name__, url_prefix="/vagas")
 # =========================
 @vaga_bp.route("", methods=["GET"])
 def listar_vagas():
+    # filtra apenas vagas ativas
     vagas_ativas = Vaga.query.filter(
-        Vaga.status.in_(["Aberta", "Em Análise", "Solicitada"])
+        Vaga.status.in_(["Solicitada", "Em Análise", "Aberta"])
     ).all()
 
-    resultado = [{
-        "id_vaga": v.id_vaga,
-        "titulo": v.titulo,
-        "descricao": v.descricao,
-        "status": v.status,
-        "data_criacao": v.data_criacao.strftime("%Y-%m-%d %H:%M:%S")
-    } for v in vagas_ativas]
+    resultado = []
+    for v in vagas_ativas:
+        resultado.append({
+            "id_vaga": v.id_vaga,
+            "titulo": v.titulo,
+            "descricao": v.descricao,
+            "status": v.status,
+            "id_departamento": v.id_departamento,
+            "id_usuario": v.id_usuario,
+            "localizacao": v.localizacao,
+            "cidade": v.cidade,
+            "tipo_contratacao": v.tipo_contratacao,
+            "nivel_vaga": v.nivel_vaga,
+            "motivo": v.motivo,
+            "numero_vagas": v.numero_vagas,
+            "urgencia": v.urgencia,
+            "projeto": v.projeto,
+            "prazo": v.prazo.strftime("%Y-%m-%d") if v.prazo else None,
+            "skills": v.skills.split(",") if v.skills else [],
+            "data_criacao": v.data_criacao.strftime("%Y-%m-%d %H:%M:%S") if v.data_criacao else None,
+            "data_atualizacao": v.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S") if v.data_atualizacao else None
+        })
 
     return jsonify(resultado)
+
 
 
 # =========================

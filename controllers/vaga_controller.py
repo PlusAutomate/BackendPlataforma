@@ -31,7 +31,7 @@ def listar_vagas():
 def listar_vagas_por_gestor(usuario_id):
     vagas = Vaga.query.filter(
         Vaga.id_usuario == usuario_id,
-        Vaga.status.in_(["Aberta", "Em Análise", "Solicitada"])
+        Vaga.status.in_(["Aberta", "Em Análise", "Fechada"])
     ).all()
 
     return jsonify([{
@@ -50,16 +50,35 @@ def listar_vagas_por_gestor(usuario_id):
 @vaga_bp.route("/<int:id>", methods=["GET"])
 def detalhar_vaga(id):
     vaga = Vaga.query.get_or_404(id)
+
+    # Se desejar restringir apenas às vagas ativas:
     if vaga.status not in ["Aberta", "Em Análise", "Solicitada"]:
         return jsonify({"erro": "Vaga não está ativa"}), 404
 
-    return jsonify({
+    # Monta o dicionário com os dados completos da vaga
+    dados_vaga = {
         "id_vaga": vaga.id_vaga,
         "titulo": vaga.titulo,
         "descricao": vaga.descricao,
         "status": vaga.status,
-        "data_criacao": vaga.data_criacao.strftime("%Y-%m-%d %H:%M:%S")
-    })
+        "id_usuario": vaga.id_usuario,
+        "id_departamento": vaga.id_departamento,
+        "departamento_nome": vaga.departamento.nome if vaga.departamento else None,
+        "localizacao": vaga.localizacao,
+        "cidade": vaga.cidade,
+        "tipo_contratacao": vaga.tipo_contratacao,
+        "nivel_vaga": vaga.nivel_vaga,
+        "motivo": vaga.motivo,
+        "numero_vagas": vaga.numero_vagas,
+        "urgencia": vaga.urgencia,
+        "projeto": vaga.projeto,
+        "prazo": vaga.prazo.strftime("%Y-%m-%d") if vaga.prazo else None,
+        "skills": vaga.skills,
+        "data_criacao": vaga.data_criacao.strftime("%Y-%m-%d %H:%M:%S"),
+        "data_atualizacao": vaga.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    return jsonify(dados_vaga), 200
 
 
 # =========================

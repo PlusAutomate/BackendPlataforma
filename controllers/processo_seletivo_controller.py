@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from models import ProcessoSeletivo, db, Vaga, Candidato, Curriculo
+from models import ProcessoSeletivo, db, Vaga, Candidato, Curriculo, Usuario
 
 processo_bp = Blueprint("processo", __name__, url_prefix="/processo-seletivo")
 
@@ -33,6 +33,49 @@ def criar_processo_seletivo():
     }), 201
 
 
+@processo_bp.route("/gestor/<int:id_usuario>", methods=["GET"])
+def listar_candidatos_por_gestor(id_usuario):
+    try:
+        resultados = (
+            db.session.query(
+                Vaga.id_vaga,
+                Vaga.titulo.label("titulo_vaga"),
+                Vaga.id_usuario,
+                Usuario.nome.label("nome_gestor"),
+                Candidato.id_candidato,
+                Candidato.nome.label("nome_candidato"),
+                Candidato.email.label("email_candidato"),
+                ProcessoSeletivo.status
+            )
+            .join(Vaga, ProcessoSeletivo.id_vaga == Vaga.id_vaga)
+            .join(Usuario, Usuario.id_usuario == Vaga.id_usuario)
+            .join(Candidato, ProcessoSeletivo.id_candidato == Candidato.id_candidato)
+            .filter(Vaga.id_usuario == id_usuario)
+            .all()
+        )
+
+        if not resultados:
+            return jsonify([]), 200
+
+        dados = [
+            {
+                "id_vaga": r.id_vaga,
+                "titulo_vaga": r.titulo_vaga,
+                "id_usuario": r.id_usuario,
+                "nome_gestor": r.nome_gestor,
+                "id_candidato": r.id_candidato,
+                "nome_candidato": r.nome_candidato,
+                "email_candidato": r.email_candidato,
+                "status": r.status
+            }
+            for r in resultados
+        ]
+
+        return jsonify(dados), 200
+
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 500
+
 # =========================
 # Listar candidatos por vaga (com currículo)
 # =========================
@@ -48,8 +91,6 @@ def listar_candidatos_por_vaga(id_vaga):
     for p in processos:
         candidato = Candidato.query.get(p.id_candidato)
         if candidato:
-            # busca o currículo relacionado, se houver
-            curriculo = Curriculo.query.get(candidato.id_curriculo)
             resultado.append({
                 "id_candidato": candidato.id_candidato,
                 "nome": candidato.nome,
@@ -58,10 +99,11 @@ def listar_candidatos_por_vaga(id_vaga):
                 "status": p.status,
                 "vaga": vaga.titulo if vaga else None,
                 "id_vaga": id_vaga,
-                "curriculo": curriculo.caminho if curriculo else None
+                "curriculo": None  # não há vínculo direto
             })
 
     return jsonify(resultado), 200
+
 
 
 # =========================
@@ -84,10 +126,14 @@ def listar_processos():
             "email": candidato.email if candidato else None,
             "status": p.status,
             "data_criacao": p.data_criacao.strftime("%Y-%m-%d %H:%M:%S"),
-            "data_atualizacao": p.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S")
+            "data_atualizacao": p.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S"),
+            "cvDetalhe": {
+                "skills": vaga.skills.split(',') if vaga and vaga.skills else []
+            }
         })
 
     return jsonify(resultado)
+
 
 
 # =========================

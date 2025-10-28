@@ -40,16 +40,18 @@ class Departamento(db.Model):
 # =========================
 # CURRICULO
 # =========================
+# =========================
+# CURRICULO
+# =========================
 class Curriculo(db.Model):
     __tablename__ = 'curriculo'
 
     id_curriculo = db.Column(db.Integer, primary_key=True)
     caminho = db.Column(db.String(255), nullable=False)
 
-    candidatos = db.relationship('Candidato', backref='curriculo', lazy=True)
-
     def __repr__(self):
         return f"<Curriculo {self.caminho}>"
+
 
 
 # =========================
@@ -62,17 +64,20 @@ class Candidato(db.Model):
     nome = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120))
     telefone = db.Column(db.String(20))
-    cv_url = db.Column(db.String(255))
-    origem = db.Column(ENUM('Upload RH', 'Indicação',
-                       'LinkedIn', 'Site', 'Outro'), default='Upload RH')
-    data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
+    skill = db.Column(db.String(100))
+    origem = db.Column(
+        ENUM('Upload RH', 'Indicação', 'LinkedIn', 'Plataforma', 'Outro'),
+        default='Upload RH'
+    )
+    data_criacao = db.Column(
+        db.TIMESTAMP, server_default=db.func.current_timestamp())
 
-    # **Campo de relacionamento com Curriculo**
-    id_curriculo = db.Column(
-        db.Integer, db.ForeignKey('curriculo.id_curriculo'))
-
+    # Relacionamento com Processo Seletivo
     processos = db.relationship(
         'ProcessoSeletivo', backref='candidato', lazy=True)
+
+    def __repr__(self):
+        return f"<Candidato {self.nome}>"
 
 
 # =========================

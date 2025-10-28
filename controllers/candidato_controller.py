@@ -18,15 +18,12 @@ def listar_candidatos():
 @candidato_bp.route("/<int:id>", methods=["GET"])
 def detalhar_candidato(id):
     c = Candidato.query.get_or_404(id)
-    if not c.ativo:
-        return jsonify({"erro": "Candidato inativo"}), 404
     return jsonify({
         "id_candidato": c.id_candidato,
         "nome": c.nome,
         "email": c.email,
         "telefone": c.telefone,
-        "curriculo_id": c.curriculo_id_curriculo,
-        "ativo": c.ativo
+        "origem": c.origem,
     })
 
 @candidato_bp.route("", methods=["POST"])

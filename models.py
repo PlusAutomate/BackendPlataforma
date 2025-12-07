@@ -158,6 +158,7 @@ class ProcessoSeletivo(db.Model):
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    matchscore = db.Column(db.Integer)
 
     def __repr__(self):
         return f"<ProcessoSeletivo Vaga {self.id_vaga} Candidato {self.id_candidato}>"

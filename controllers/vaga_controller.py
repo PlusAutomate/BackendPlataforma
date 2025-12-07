@@ -180,3 +180,15 @@ def aprovar_vaga(id):
     vaga.status = "Aberta"
     db.session.commit()
     return jsonify({"mensagem": "Vaga aprovada!"})
+
+    
+@vaga_bp.route("/<int:id>/fechar", methods=["PUT"])
+def fechar_vaga(id):
+    vaga = Vaga.query.get_or_404(id)
+
+    if vaga.status == "Fechada":
+        return jsonify({"erro": "Não é possível fechar uma vaga fechada."}), 400
+
+    vaga.status = "Fechada"
+    db.session.commit()
+    return jsonify({"mensagem": "Vaga fechada!"})

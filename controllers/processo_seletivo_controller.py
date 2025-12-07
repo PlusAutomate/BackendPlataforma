@@ -124,9 +124,11 @@ def listar_processos():
             "titulo_vaga": vaga.titulo if vaga else None,
             "id_candidato": p.id_candidato,
             "candidato_telefone": candidato.telefone,
+            "analise": p.analise_automatica if p else None,
             "nome": candidato.nome if candidato else None,
             "email": candidato.email if candidato else None,
             "status": p.status,
+            "matchScore": p.matchscore,
             "data_criacao": p.data_criacao.strftime("%Y-%m-%d %H:%M:%S"),
             "data_atualizacao": p.data_atualizacao.strftime("%Y-%m-%d %H:%M:%S"),
             "cvDetalhe": {
@@ -135,6 +137,33 @@ def listar_processos():
         })
 
     return jsonify(resultado)
+
+@processo_bp.route("/<int:id_vaga>/<int:id_candidato>/score", methods=["PUT"])
+def atualizar_score(id_vaga, id_candidato):
+    dados = request.json
+    matchScore = dados.get("matchScore")
+
+    if matchScore is None:
+        return jsonify({"erro": "matchScore é obrigatório"}), 400
+
+    processo = ProcessoSeletivo.query.filter_by(
+        id_vaga=id_vaga,
+        id_candidato=id_candidato
+    ).first()
+
+    if not processo:
+        return jsonify({"erro": "Processo não encontrado"}), 404
+
+    processo.matchscore = matchScore
+
+    db.session.commit()
+
+    return jsonify({
+        "mensagem": "Match Score atualizado com sucesso!",
+        "id_vaga": id_vaga,
+        "id_candidato": id_candidato,
+        "matchScore": matchScore
+    })
 
 
 @processo_bp.route("/candidato/<int:id_candidato>", methods=["GET"])

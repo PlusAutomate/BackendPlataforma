@@ -14,9 +14,9 @@ def create_app():
 
     # 🔹 Permitir apenas o seu frontend atual
     CORS(app, origins=[
-        "http://127.0.0.1:58006",
-        "http://localhost:58006,"
-        "http://18.234.110.104:58006"
+        "http://127.0.0.1:5000",
+        "http://localhost:5000,"
+        "http://44.195.153.109:5000"
     ])
 
     return app
